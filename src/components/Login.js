@@ -3,7 +3,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { loginUser } from "../redux/store/features/userSlice";
+import { loginUser } from "../redux/store/features/userLoginSlice";
 import { unwrapResult } from '@reduxjs/toolkit'
 
 
@@ -20,16 +20,18 @@ const Login = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     dispatch(loginUser({ email, senha }))
-    .then(unwrapResult)
+      .then(unwrapResult)
       .then((response) => {
-        console.log(response); 
+        console.log(response);
+        // Armazena a resposta da API no localStorage
+        window.localStorage.setItem('user', JSON.stringify(response));
         navigate("/home");
       })
       .catch((error) => {
         setErro(error)
         console.error(error);
       });
-  };
+};
  
 
   return (
