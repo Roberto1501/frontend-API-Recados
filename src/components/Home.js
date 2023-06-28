@@ -1,4 +1,4 @@
-import React, { useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { recadosUsuario } from '../redux/store/features/recadosSlice';
 import { createRecado } from '../redux/store/features/createRecado';
@@ -16,60 +16,86 @@ import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import { unwrapResult } from '@reduxjs/toolkit'
-
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import { UpdateRecado } from '../redux/store/features/editRecado';
 
 function Home() {
-    const dispatch = useDispatch();
-    const recados = useSelector(state => state.recados?.data);
-
-    // Recupera o ID do usuário do localStorage
-    let userId = window.localStorage.getItem('user');
-
     const [open, setOpen] = useState(false);
-    const [title,setTitle]= useState("");
+    const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [newTitle, setNewTitle] = useState("");
+    const [newDescription, setNewDescription] = useState("");
+    const [openEdit, setOpenEdit] = useState(false);
+    const [erro, setErro] = useState("");
+    const [refresh, setRefresh] = useState(false);
+    const [recadoToEdit, setRecadoToEdit] = useState(null);  // Novo estado
+
     const handleClose = () => setOpen(false); 
     const handleOpen = () => setOpen(true);
-    const [erro, setErro]= useState("");
-    const [refresh, setRefresh] = useState(false)
 
+    const dispatch = useDispatch();
+    const recados = useSelector(state => state.recados?.data);
+    let userId = window.localStorage.getItem('user');
 
+    const handleRecadoCreation = (event) => {
+        event.preventDefault();
+        userId = userId.replace(/"/g, '');
 
+        dispatch(createRecado({userId, title, description}))
+            .then(unwrapResult)
+            .then((response) => {
+                console.log(response);
+                setRefresh(!refresh)
+                setOpen(false);
+            })
+            .catch((error) => {
+                console.error(error);
+                setErro(error);
+            });
+    }
 
-    const handleRecadoCreation = (event)=>{
+    function EditRecado() {
+        if (!recadoToEdit) return; // se não há recado para editar, retorne
 
-    event.preventDefault()
-     userId = userId.replace(/"/g, '');
+        userId = userId.replace(/"/g, '');
+        const id = recadoToEdit._id;
+        const title = newTitle;
+        const description = newDescription;
 
-  dispatch(createRecado({userId,title, description}))
-  .then(unwrapResult)
-      .then((response) => {
-        console.log(response); 
-        setRefresh(!refresh)
-        setOpen(false)
+        dispatch(UpdateRecado({ userId, id, title, description }))
+            .then(unwrapResult)
+            .then((response) => {
+                console.log(response);
+                setRefresh(!refresh)
+                setOpenEdit(false);  // fecha o modal de edição
+                setRecadoToEdit(null);  // limpa o recado selecionado
+            })
+            .catch((error) => {
+                console.error(error);
+                setErro(error);
+            });
+    }
 
-      })
-      .catch((error) => {
-        console.error(error);
-        setErro(error)
-      });
+    function OpenEditModal (recado) {
+        setNewTitle(recado._title);
+        setNewDescription(recado._description);
+        setRecadoToEdit(recado);
+        setOpenEdit(true);
     }
 
     useEffect(() => {
         if (userId) {
-            // Remove as aspas extras do ID do usuário
             const parsedUserId = userId.replace(/"/g, '');
             dispatch(recadosUsuario(parsedUserId))
                 .catch((error) => {
                     console.log(error);
                 });
         }
-    }, [userId, dispatch,refresh]);
+    }, [userId, dispatch, refresh]);
 
     if (!Array.isArray(recados)) {
         return null;
     }
-
     return (
         <React.Fragment>
             <div className={styles.normalFlex}>
@@ -116,6 +142,43 @@ function Home() {
                             {erro}
                     </Box>
                 </Modal>
+
+                <Modal
+    open={openEdit}
+    onClose={() => setOpenEdit(false)}
+    aria-labelledby="modal-modal-title"
+    aria-describedby="modal-modal-description"
+    style={{display:"flex", position:"absolute", top:"50%", left: "50%", transform:"translate(-50%, -50%)"}}
+>
+    <Box sx={{ backgroundColor: "white", width: "100%" }}>
+        <div style={{display:"flex", justifyContent: "flex-end"}}>
+            <Button onClick={() => setOpenEdit(false)}>
+                X
+            </Button>
+        </div>
+
+        <Typography id="modal-modal-title" variant="h6" component="h2">
+            Edite o recado
+        </Typography>
+
+        <TextField
+            value={newTitle}
+            onChange={(e)=> setNewTitle(e.target.value)}
+            id="outlined-basic" label="title" variant="outlined" fullWidth style={{ marginTop: 16 }}
+        />
+
+        <TextField 
+            value={newDescription}
+            onChange={(e)=> setNewDescription(e.target.value)}
+            id="outlined-basic" label="description" variant="outlined" fullWidth style={{ marginTop: 16 }}
+        />
+
+        <Button onClick={EditRecado} variant="contained" color="primary" fullWidth style={{ marginTop: 16 }}>
+            Atualizar
+        </Button>
+        {erro && <div>{erro}</div>}
+    </Box>
+</Modal>
         
                 <TableContainer component={Paper}>
                     <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -137,6 +200,12 @@ function Home() {
                                     </TableCell>
                                     <TableCell>{recado._description}</TableCell>
                                     <TableCell>{recado._status}</TableCell>
+                                    <TableCell>
+                                        
+                                        <Button onClick={() => OpenEditModal(recado)}>
+                                            <ModeEditIcon />
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
