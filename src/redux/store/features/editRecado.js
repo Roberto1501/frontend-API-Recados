@@ -3,12 +3,12 @@ import axios from 'axios'
 
 export const UpdateRecado = createAsyncThunk(
   "recado/update",
-  async ({ userId, id, title, description,status }, { rejectWithValue }) => {
+  async ({ userId, id, title, description,statusRecado }, { rejectWithValue }) => {
     try {
       const response = await axios.put(`http://localhost:3333/user/${userId}/recado/${id}`, {
          title,
          description,
-         status
+         statusRecado
       });
       if (response.data) {
         return response.data;

@@ -24,6 +24,7 @@ function Home() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [newTitle, setNewTitle] = useState("");
+    const[statusRecado,setStatusRecado] = useState("")
     const [newDescription, setNewDescription] = useState("");
     const [openEdit, setOpenEdit] = useState(false);
     const [erro, setErro] = useState("");
@@ -41,12 +42,14 @@ function Home() {
         event.preventDefault();
         userId = userId.replace(/"/g, '');
 
-        dispatch(createRecado({userId, title, description}))
+        dispatch(createRecado({userId, title, description,statusRecado}))
             .then(unwrapResult)
             .then((response) => {
                 console.log(response);
                 setRefresh(!refresh)
                 setOpen(false);
+                setTitle("");
+                setDescription("")
             })
             .catch((error) => {
                 console.error(error);
@@ -62,13 +65,14 @@ function Home() {
         const title = newTitle;
         const description = newDescription;
 
-        dispatch(UpdateRecado({ userId, id, title, description }))
+        dispatch(UpdateRecado({ userId, id, title, description,statusRecado }))
             .then(unwrapResult)
             .then((response) => {
                 console.log(response);
                 setRefresh(!refresh)
                 setOpenEdit(false);  // fecha o modal de edição
                 setRecadoToEdit(null);  // limpa o recado selecionado
+               
             })
             .catch((error) => {
                 console.error(error);
@@ -87,6 +91,10 @@ function Home() {
         if (userId) {
             const parsedUserId = userId.replace(/"/g, '');
             dispatch(recadosUsuario(parsedUserId))
+            .then(unwrapResult)
+            .then((response) => {
+                console.log(recados)
+            })
                 .catch((error) => {
                     console.log(error);
                 });
@@ -173,6 +181,12 @@ function Home() {
             id="outlined-basic" label="description" variant="outlined" fullWidth style={{ marginTop: 16 }}
         />
 
+        <TextField 
+            value={statusRecado}
+            onChange={(e)=> setStatusRecado(e.target.value)}
+            id="outlined-basic" label="status" variant="outlined" fullWidth style={{ marginTop: 16 }}
+        />
+
         <Button onClick={EditRecado} variant="contained" color="primary" fullWidth style={{ marginTop: 16 }}>
             Atualizar
         </Button>
@@ -190,7 +204,7 @@ function Home() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {recados.map((recado, index) => (
+                        {recados.filter(recado => recado._statusRecado === 'visivel').map((recado, index) => (
                                 <TableRow
                                     key={index}
                                     sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
@@ -199,7 +213,7 @@ function Home() {
                                         {recado._title}
                                     </TableCell>
                                     <TableCell>{recado._description}</TableCell>
-                                    <TableCell>{recado._status}</TableCell>
+                                    <TableCell>{recado._statusRecado}</TableCell>
                                     <TableCell>
                                         
                                         <Button onClick={() => OpenEditModal(recado)}>
